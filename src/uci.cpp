@@ -233,11 +233,8 @@ namespace {
 
 void UCI::loop(int argc, char* argv[]) {
 
-  Position pos;
   string token, cmd;
   StateListPtr states(new std::deque<StateInfo>(1));
-
-  pos.set(StartFEN, false, &states->back(), Threads.main());
 
   for (int i = 1; i < argc; ++i)
       cmd += std::string(argv[i]) + " ";
@@ -246,57 +243,7 @@ void UCI::loop(int argc, char* argv[]) {
       if (argc == 1 && !getline(cin, cmd)) // Wait for an input or an end-of-file (EOF) indication
           cmd = "quit";
 
-      istringstream is(cmd);
-
-      token.clear(); // Avoid a stale if getline() returns nothing or a blank line
-      is >> skipws >> token;
-
-      if (    token == "quit"
-          ||  token == "stop")
-          Threads.stop = true;
-
-      // The GUI sends 'ponderhit' to tell that the user has played the expected move.
-      // So, 'ponderhit' is sent if pondering was done on the same move that the user
-      // has played. The search should continue, but should also switch from pondering
-      // to the normal search.
-      else if (token == "ponderhit")
-          Threads.main()->ponder = false; // Switch to the normal search
-
-      else if (token == "uci")
-          sync_cout << "id name " << engine_info(true)
-                    << "\n"       << Options
-                    << "\nuciok"  << sync_endl;
-
-      else if (token == "setoption")  setoption(is);
-      else if (token == "go")         go(pos, is, states);
-      else if (token == "position")   position(pos, is, states);
-      else if (token == "ucinewgame") Search::clear();
-      else if (token == "isready")    sync_cout << "readyok" << sync_endl;
-
-      // Add custom non-UCI commands, mainly for debugging purposes.
-      // These commands must not be used during a search!
-      else if (token == "flip")     pos.flip();
-      else if (token == "bench")    bench(pos, is, states);
-      else if (token == "d")        sync_cout << pos << sync_endl;
-      else if (token == "eval")     trace_eval(pos);
-      else if (token == "compiler") sync_cout << compiler_info() << sync_endl;
-      else if (token == "export_net")
-      {
-          std::optional<std::string> filename;
-          std::string f;
-          if (is >> skipws >> f)
-              filename = f;
-          Eval::NNUE::save_eval(filename);
-      }
-      else if (token == "--help" || token == "help" || token == "--license" || token == "license")
-          sync_cout << "\nStockfish is a powerful chess engine for playing and analyzing."
-                       "\nIt is released as free software licensed under the GNU GPLv3 License."
-                       "\nStockfish is normally used with a graphical user interface (GUI) and implements"
-                       "\nthe Universal Chess Interface (UCI) protocol to communicate with a GUI, an API, etc."
-                       "\nFor any further information, visit https://github.com/official-stockfish/Stockfish#readme"
-                       "\nor read the corresponding README.md and Copying.txt files distributed along with this program.\n" << sync_endl;
-      else if (!token.empty() && token[0] != '#')
-          sync_cout << "Unknown command: '" << cmd << "'. Type help for more information." << sync_endl;
+      execute_command(cmd);
 
   } while (token != "quit" && argc == 1); // The command-line arguments are one-shot
 }
@@ -392,6 +339,67 @@ Move UCI::to_move(const Position& pos, string& str) {
           return m;
 
   return MOVE_NONE;
+}
+
+// Provides external command execution for UCI.
+void UCI::execute_command(const std::string &cmd) {
+  StateListPtr states(new std::deque<StateInfo>(1));
+  
+  Position pos;
+  pos.set(StartFEN, false, &states->back(), Threads.main());
+  
+  istringstream is(cmd);
+  string token;
+
+  token.clear(); // Avoid a stale if getline() returns nothing or a blank line
+  is >> skipws >> token;
+
+  if (    token == "quit"
+      ||  token == "stop")
+      Threads.stop = true;
+
+  // The GUI sends 'ponderhit' to tell that the user has played the expected move.
+  // So, 'ponderhit' is sent if pondering was done on the same move that the user
+  // has played. The search should continue, but should also switch from pondering
+  // to the normal search.
+  else if (token == "ponderhit")
+      Threads.main()->ponder = false; // Switch to the normal search
+
+  else if (token == "uci")
+      sync_cout << "id name " << engine_info(true)
+                << "\n"       << Options
+                << "\nuciok"  << sync_endl;
+
+  else if (token == "setoption")  setoption(is);
+  else if (token == "go")         go(pos, is, states);
+  else if (token == "position")   position(pos, is, states);
+  else if (token == "ucinewgame") Search::clear();
+  else if (token == "isready")    sync_cout << "readyok" << sync_endl;
+
+  // Add custom non-UCI commands, mainly for debugging purposes.
+  // These commands must not be used during a search!
+  else if (token == "flip")     pos.flip();
+  else if (token == "bench")    bench(pos, is, states);
+  else if (token == "d")        sync_cout << pos << sync_endl;
+  else if (token == "eval")     trace_eval(pos);
+  else if (token == "compiler") sync_cout << compiler_info() << sync_endl;
+  else if (token == "export_net")
+  {
+      std::optional<std::string> filename;
+      std::string f;
+      if (is >> skipws >> f)
+          filename = f;
+      Eval::NNUE::save_eval(filename);
+  }
+  else if (token == "--help" || token == "help" || token == "--license" || token == "license")
+      sync_cout << "\nStockfish is a powerful chess engine for playing and analyzing."
+                   "\nIt is released as free software licensed under the GNU GPLv3 License."
+                   "\nStockfish is normally used with a graphical user interface (GUI) and implements"
+                   "\nthe Universal Chess Interface (UCI) protocol to communicate with a GUI, an API, etc."
+                   "\nFor any further information, visit https://github.com/official-stockfish/Stockfish#readme"
+                   "\nor read the corresponding README.md and Copying.txt files distributed along with this program.\n" << sync_endl;
+  else if (!token.empty() && token[0] != '#')
+      sync_cout << "Unknown command: '" << cmd << "'. Type help for more information." << sync_endl;
 }
 
 } // namespace Stockfish

@@ -83,6 +83,8 @@ std::string pv(const Position& pos, Depth depth);
 std::string wdl(Value v, int ply);
 Move to_move(const Position& pos, std::string& str);
 
+void execute_command(const std::string &cmd);
+
 } // namespace UCI
 
 extern UCI::OptionsMap Options;
