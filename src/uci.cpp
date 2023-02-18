@@ -234,7 +234,6 @@ namespace {
 void UCI::loop(int argc, char* argv[]) {
 
   string token, cmd;
-  StateListPtr states(new std::deque<StateInfo>(1));
 
   for (int i = 1; i < argc; ++i)
       cmd += std::string(argv[i]) + " ";
@@ -343,10 +342,9 @@ Move UCI::to_move(const Position& pos, string& str) {
 
 // Provides external command execution for UCI.
 void UCI::execute_command(const std::string &cmd) {
-  StateListPtr states(new std::deque<StateInfo>(1));
+  static StateListPtr states(new std::deque<StateInfo>(1));
   
-  Position pos;
-  pos.set(StartFEN, false, &states->back(), Threads.main());
+  static Position pos(StartFEN, false, &states->back(), Threads.main());
   
   istringstream is(cmd);
   string token;

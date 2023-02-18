@@ -83,6 +83,7 @@ public:
 
   Position() = default;
   Position(const Position&) = delete;
+  Position(const std::string fenStr, bool isChess960, StateInfo* si, Thread* th) { set(fenStr, isChess960, si, th); }
   Position& operator=(const Position&) = delete;
 
   // FEN string input/output
