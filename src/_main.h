@@ -1,6 +1,6 @@
 //
 //  _main.h
-//  ChessKitEngine/Stockfish
+//  EngineKit/Stockfish
 //
 
 #ifndef _main_h
