@@ -1,6 +1,8 @@
 name: Stockfish
 on:
   push:
+    tags:
+      - "*"
     branches:
       - master
       - tools
@@ -11,6 +13,9 @@ on:
       - tools
 jobs:
   Tests:
-    uses: ./.github/workflows/stockfish_test.yml
-  Compiles:
-    uses: ./.github/workflows/stockfish_compile_test.yml
+    uses: ./.github/workflows/tests.yml
+  Compilation:
+    needs: [Matrix]
+    uses: ./.github/workflows/compilation.yml
+    with:
+      matrix: ${{ needs.Matrix.outputs.matrix }}
